@@ -21,9 +21,7 @@ load_dotenv(BASE_DIR / ".env")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 if not GROQ_API_KEY:
-    raise RuntimeError(
-        "GROQ_API_KEY is not configured."
-    )
+    raise RuntimeError("GROQ_API_KEY is not configured.")
 
 client = Groq(
     api_key=GROQ_API_KEY
@@ -49,19 +47,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-
-        # Vercel deployment
-        "https://hiremeai.vercel.app",
-    ],
-
-    allow_credentials=True,
-
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
 
@@ -118,7 +106,7 @@ resume_schema = Resume.model_json_schema()
 
 
 # ============================================================
-# PDF
+# PDF READER
 # ============================================================
 
 def read_pdf(file_path: Path):
@@ -151,7 +139,6 @@ def read_pdf(file_path: Path):
 def parse_resume(resume_text: str):
 
     system_prompt = f"""
-
 You are an expert resume parser.
 
 Extract information from the resume based on meaning,
@@ -192,18 +179,13 @@ Rules:
 4. Include internships inside experiences.
 
 5. Extract relevant skills from the entire resume.
-
 """
 
-
     user_prompt = f"""
-
 Parse the following resume:
 
 {resume_text}
-
 """
-
 
     response = client.chat.completions.create(
 
@@ -225,7 +207,6 @@ Parse the following resume:
             "type": "json_object"
         }
     )
-
 
     raw_output = response.choices[0].message.content
 
@@ -257,7 +238,6 @@ def ask_candidate(
 ):
 
     system_prompt = f"""
-
 You are HireMeAI.
 
 You are an AI assistant representing a job candidate.
@@ -273,7 +253,7 @@ Rules:
 2. Never hallucinate.
 
 3. Never invent skills, jobs, education,
-projects or experience.
+   projects or experience.
 
 4. If information is unavailable, say:
 
@@ -282,9 +262,7 @@ projects or experience.
 5. Be professional.
 
 6. Answer as if HR is interviewing this candidate.
-
 """
-
 
     response = client.chat.completions.create(
 
@@ -303,7 +281,6 @@ projects or experience.
         ]
     )
 
-
     return response.choices[0].message.content
 
 
@@ -317,7 +294,6 @@ def match_candidate(
 ):
 
     system_prompt = f"""
-
 You are an expert technical recruiter.
 
 You must evaluate how well this candidate matches
@@ -355,9 +331,7 @@ Rules:
 4. Clearly identify missing skills.
 
 5. Give a professional recruitment recommendation.
-
 """
-
 
     response = client.chat.completions.create(
 
@@ -374,7 +348,6 @@ Rules:
             "type": "json_object"
         }
     )
-
 
     return json.loads(
         response.choices[0].message.content
